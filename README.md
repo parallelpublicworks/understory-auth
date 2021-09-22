@@ -6,4 +6,4 @@
 
 ## License
 
-MIT © [jdiglesias](https://github.com/parallelpublicworks)
+MIT © [parallelpublicworks](https://github.com/parallelpublicworks)
