@@ -1,10 +1,10 @@
 {
-  "name": "understory-auth",
+  "name": "@parallelpublicworks/understory-auth",
   "version": "1.0.1",
   "description": "A JS library for authenticating with an Understory backend",
   "author": "jdiglesias",
   "license": "MIT",
-  "repository": "jdiglesias/understory-auth",
+  "repository": "git://github.com/parallelpublicworks/understory-auth",
   "main": "dist/index.js",
   "module": "dist/index.modern.js",
   "source": "src/index.tsx",
