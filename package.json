@@ -1,6 +1,6 @@
 {
   "name": "understory-auth",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A JS library for authenticating with an Understory backend",
   "author": "jdiglesias",
   "license": "MIT",

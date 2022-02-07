@@ -239,8 +239,8 @@ export class DrupalOAuth{
 
   removeTokens(){
     if (typeof window !== `undefined`) {
-      docCookies.removeItem('refresh_token');
-      docCookies.removeItem('access_token');
+      docCookies.removeItem('refresh_token', '/');
+      docCookies.removeItem('access_token', '/');
     }
   }
 
