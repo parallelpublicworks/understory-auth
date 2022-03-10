@@ -103,23 +103,6 @@ function checkIfDuplicateModification(body) {
   return body.hasOwnProperty('errors') && body.errors.length === 1 && body.errors[0].status === "422" && body.errors[0].hasOwnProperty('detail') && body.errors[0].detail === "Entity is not valid: The content has either been modified by another user, or you have already submitted modifications. As a result, your changes cannot be saved.";
 }
 
-function getBaseUrl() {
-  if (!process.env.REACT_APP_ENTITYSYNC_BASE_URL) {
-    console.log(process.env);
-    throw new Error("Missing base url for Entity Sync. Please set the REACT_APP_ENTITYSYNC_BASE_URL environment variable to the base url of your backend, like 'https://www.my-backend.com'");
-  }
-
-  return process.env.REACT_APP_ENTITYSYNC_BASE_URL.replace(/\/$/, "");
-}
-
-function getClientId() {
-  if (!process.env.REACT_APP_ENTITYSYNC_CLIENT_ID) {
-    throw new Error("Missing client ID for Entity Sync. Please set the REACT_APP_ENTITYSYNC_CLIENT_ID environment variable to the OAuth client_id of your app.");
-  }
-
-  return process.env.REACT_APP_ENTITYSYNC_CLIENT_ID;
-}
-
 function getPath(defaultEndpoint, endpointEnvVar) {
   var endpoint = defaultEndpoint;
 
@@ -131,7 +114,15 @@ function getPath(defaultEndpoint, endpointEnvVar) {
 }
 
 var DrupalOAuth = /*#__PURE__*/function () {
-  function DrupalOAuth() {
+  function DrupalOAuth(args) {
+    if (args.baseUrl) {
+      this.baseUrl = args.baseUrl;
+    }
+
+    if (args.clientId) {
+      this.clientId = args.clientId;
+    }
+
     this.token = typeof window !== "undefined" && mozillaDocCookies.hasItem('refresh_token') && mozillaDocCookies.hasItem('access_token') ? {
       refresh_token: mozillaDocCookies.getItem('refresh_token'),
       access_token: mozillaDocCookies.getItem('access_token')
@@ -140,6 +131,30 @@ var DrupalOAuth = /*#__PURE__*/function () {
   }
 
   var _proto = DrupalOAuth.prototype;
+
+  _proto.getBaseUrl = function getBaseUrl() {
+    if (!process.env.REACT_APP_ENTITYSYNC_BASE_URL && !this.baseUrl) {
+      throw new Error("Missing base url for Entity Sync. Please set the REACT_APP_ENTITYSYNC_BASE_URL environment variable or pass in `baseUrl` to the DrupalOAuth object as the base url of your backend, like 'https://www.my-backend.com'");
+    }
+
+    if (this.baseUrl) {
+      return this.baseUrl;
+    }
+
+    return process.env.REACT_APP_ENTITYSYNC_BASE_URL.replace(/\/$/, "");
+  };
+
+  _proto.getClientId = function getClientId() {
+    if (!process.env.REACT_APP_ENTITYSYNC_CLIENT_ID && !this.clientId) {
+      throw new Error("Missing client ID for Entity Sync. Please set the REACT_APP_ENTITYSYNC_CLIENT_ID environment variable or pass in `clientId` to the DrupalOAuth object as the OAuth client_id of your app.");
+    }
+
+    if (this.clientId) {
+      return this.clientId;
+    }
+
+    return process.env.REACT_APP_ENTITYSYNC_CLIENT_ID;
+  };
 
   _proto.verifyResponse = function verifyResponse(resp) {
     try {
@@ -185,7 +200,8 @@ var DrupalOAuth = /*#__PURE__*/function () {
         body = JSON.stringify(body);
       }
 
-      var base = getBaseUrl();
+      var base = _this2.getBaseUrl();
+
       var jsonapiBase = getPath('jsonapi', 'REACT_APP_ENTITYSYNC_JSONAPI_BASE');
       var url = base + "/" + jsonapiBase + "/" + jsonapiEndpoint;
       var init = {
@@ -315,7 +331,8 @@ var DrupalOAuth = /*#__PURE__*/function () {
         }
       };
 
-      var base = getBaseUrl();
+      var base = _this6.getBaseUrl();
+
       var url = base + '/oauth/token';
       var formData = form ? form : new FormData();
 
@@ -324,7 +341,7 @@ var DrupalOAuth = /*#__PURE__*/function () {
       }
 
       formData.append('grant_type', grantType);
-      formData.append('client_id', getClientId());
+      formData.append('client_id', _this6.getClientId());
       var init = {
         method: 'POST',
         body: formData
@@ -379,15 +396,15 @@ var DrupalOAuth = /*#__PURE__*/function () {
 
   _proto.removeTokens = function removeTokens() {
     if (typeof window !== "undefined") {
-      mozillaDocCookies.removeItem('refresh_token');
-      mozillaDocCookies.removeItem('access_token');
+      mozillaDocCookies.removeItem('refresh_token', '/');
+      mozillaDocCookies.removeItem('access_token', '/');
     }
   };
 
   return DrupalOAuth;
 }();
 
-var fetchAuthenticatedContent = function fetchAuthenticatedContent(dispatch, jsonapi_endpoint, method, body, headers) {
+var fetchAuthenticatedContent = function fetchAuthenticatedContent(authContext, jsonapi_endpoint, method, body, headers) {
   if (method === void 0) {
     method = 'GET';
   }
@@ -401,7 +418,17 @@ var fetchAuthenticatedContent = function fetchAuthenticatedContent(dispatch, jso
   }
 
   try {
-    var auth = new DrupalOAuth();
+    var state, dispatch;
+
+    if (Array.isArray(authContext)) {
+      state = authContext[0];
+      dispatch = authContext[1];
+    } else {
+      state = {};
+      dispatch = authContext;
+    }
+
+    var auth = new DrupalOAuth(state);
     return Promise.resolve(auth.drupalFetch(jsonapi_endpoint, method, body, headers)).then(function (content) {
       if (!content) {
         dispatch(logoutUserAction());
@@ -415,8 +442,9 @@ var fetchAuthenticatedContent = function fetchAuthenticatedContent(dispatch, jso
 };
 var submitLogin = function submitLogin(authContext, formData) {
   try {
-    var dispatch = authContext[1];
-    var auth = new DrupalOAuth();
+    var state = authContext[0],
+        dispatch = authContext[1];
+    var auth = new DrupalOAuth(state);
     return Promise.resolve(auth.loginUser(formData, 'authorization_code')).then(function (token) {
       if (token && token.token) {
         dispatch(authenticateUserAction());
@@ -430,8 +458,9 @@ var submitLogin = function submitLogin(authContext, formData) {
 };
 var handleLogin = function handleLogin(authContext, ev) {
   try {
-    var dispatch = authContext[1];
-    var auth = new DrupalOAuth();
+    var state = authContext[0],
+        dispatch = authContext[1];
+    var auth = new DrupalOAuth(state);
     var formData = new FormData(event.target);
     return Promise.resolve(auth.loginUser(formData, 'password')).then(function (token) {
       if (token && token.token) {
@@ -480,8 +509,9 @@ var reducer = function reducer(state, action) {
 };
 
 function handleLogout(authContext) {
-  var dispatch = authContext[1];
-  var auth = new DrupalOAuth();
+  var state = authContext[0],
+      dispatch = authContext[1];
+  var auth = new DrupalOAuth(state);
   var loggedOut = auth.logoutUser();
 
   if (loggedOut) {
@@ -491,11 +521,21 @@ function handleLogout(authContext) {
   return loggedOut;
 }
 var AuthContextProvider = function AuthContextProvider(props) {
-  var auth = new DrupalOAuth();
+  var auth = new DrupalOAuth(props);
 
-  var _React$useReducer = React.useReducer(reducer, _extends({}, initialState, {
+  var state = _extends({}, initialState, {
     isAuthenticated: auth.isLoggedIn()
-  })),
+  });
+
+  if (props.clientId) {
+    state.clientId = props.clientId;
+  }
+
+  if (props.baseUrl) {
+    state.baseUrl = props.baseUrl;
+  }
+
+  var _React$useReducer = React.useReducer(reducer, state),
       authState = _React$useReducer[0],
       dispatch = _React$useReducer[1];
 

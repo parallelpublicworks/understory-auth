@@ -42,8 +42,8 @@ const reducer = (state, action) => {
  * @returns {Promise<void>}
  */
 export async function handleLogin(authContext, ev){
-  const [, dispatch] = authContext;
-  const auth = new DrupalOAuth();
+  const [state, dispatch] = authContext;
+  const auth = new DrupalOAuth(state);
   const formData = new FormData(event.target);
   const token = await auth.loginUser(formData, 'password');
   if(token && token.token) {
@@ -61,8 +61,8 @@ export async function handleLogin(authContext, ev){
  * @returns {Promise<void>}
  */
 export async function submitLogin(authContext, formData){
-  const [, dispatch] = authContext;
-  const auth = new DrupalOAuth();
+  const [state, dispatch] = authContext;
+  const auth = new DrupalOAuth(state);
   const token = await auth.loginUser(formData, 'authorization_code');
   if(token && token.token) {
     dispatch(authenticateUserAction());
@@ -74,8 +74,8 @@ export async function submitLogin(authContext, formData){
 }
 
 export function handleLogout(authContext){
-  const [, dispatch] = authContext;
-  const auth = new DrupalOAuth();
+  const [state, dispatch] = authContext;
+  const auth = new DrupalOAuth(state);
   const loggedOut = auth.logoutUser();
   //updates the state which forces a re render which will force the user off the page
   if(loggedOut){
@@ -95,12 +95,7 @@ export function handleLogout(authContext){
  * @see signInToView
  * @see AuthContextProvider
  *
- * @param {!DrupalOAuth} auth The authentication service. This will be bound by UserContextProvider, don't pass it in page
- * components.
- * @param dispatch The dispatch function to the reducer. This will be bound by UserContextProvider, don't pass it in page
- * components.
- *
- * These are the parameters you will pass in your page components
+ * @param authContext Either the dispatch function to the reducer or the whole auth context, as an array with the state as the first element and the dispatch function as the second.
  * @param {string} jsonapi_endpoint An endpoint to retrieve resources using the JSONAPI (https://jsonapi.org/). Includes
  * everything after the host except the leading slash (ex. `'articles?page[offset]=2'`)
  * @param {string} method An HTTP verb, mainly meant for `'GET'`,`'POST'`, `'PATCH'` and `'DELETE'`
@@ -109,8 +104,16 @@ export function handleLogout(authContext){
  *
  * @returns {Promise<object | Boolean>} A promise which will return a JSON object of content or false if it failed
  */
-export async function fetchAuthenticatedContent(dispatch, jsonapi_endpoint, method='GET', body=null, headers=null){
-  const auth = new DrupalOAuth();
+export async function fetchAuthenticatedContent(authContext, jsonapi_endpoint, method='GET', body=null, headers=null){
+  let state, dispatch;
+  if(Array.isArray(authContext)){
+    [state, dispatch] = authContext
+  }
+  else{
+    state = {};
+    dispatch = authContext;
+  }
+  const auth = new DrupalOAuth(state);
   const content = await auth.drupalFetch(jsonapi_endpoint, method, body, headers);
   if(!content){
     dispatch(logoutUserAction());
@@ -123,14 +126,22 @@ export async function fetchAuthenticatedContent(dispatch, jsonapi_endpoint, meth
  * authenticated content. These functions are bound to the store and will dispatch actions to change the
  * `isAuthenticated` state. Also initiates the process of determining if we are logged in on first page load.
  *
- * @param props
+ * @param props can pass in clientId and/or baseUrl to this
  * @returns {*} The
  * @constructor
  */
 export const AuthContextProvider = props => {
+  const auth = new DrupalOAuth(props);
+  const state =  {...initialState, isAuthenticated: auth.isLoggedIn() };
 
-  const auth = new DrupalOAuth();
-  const [authState, dispatch] = React.useReducer(reducer, {...initialState, isAuthenticated: auth.isLoggedIn() });
+  if(props.clientId){
+    state.clientId = props.clientId;
+  }
+  if(props.baseUrl){
+    state.baseUrl = props.baseUrl;
+  }
+
+  const [authState, dispatch] = React.useReducer(reducer, state);
   return (
     <AuthContext.Provider
       value={ [{

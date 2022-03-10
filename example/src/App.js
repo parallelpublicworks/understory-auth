@@ -3,6 +3,9 @@ import React, { useContext, useEffect} from 'react'
 import { AuthContextProvider, fetchAuthenticatedContent, AuthContext, handleLogin, handleLogout } from 'understory-auth';
 // import 'min-entitysync/dist/index.css'
 
+const clientId = '5707da32-0c7c-42f1-9256-d4eeb9082c41';
+const baseUrl = 'http://localhost:8080';
+
 function Login(){
   const authContext = useContext(AuthContext);
   const [{isAuthenticated}, dispatch] = authContext;
@@ -43,7 +46,7 @@ function Login(){
 
 function App() {
   return (
-    <AuthContextProvider>
+    <AuthContextProvider clientId={clientId} baseUrl={baseUrl}>
       <Login/>
     </AuthContextProvider>
   );
