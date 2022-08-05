@@ -1,6 +1,7 @@
 function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'default' in ex) ? ex['default'] : ex; }
 
 var React = _interopDefault(require('react'));
+var docCookies = _interopDefault(require('mozilla-doc-cookies'));
 
 function _extends() {
   _extends = Object.assign || function (target) {
@@ -39,66 +40,6 @@ function _catch(body, recover) {
 	return result;
 }
 
-var mozillaDocCookies = {
-  getItem: function getItem(sKey) {
-    if (!sKey) {
-      return null;
-    }
-
-    return decodeURIComponent(document.cookie.replace(new RegExp("(?:(?:^|.*;)\\s*" + encodeURIComponent(sKey).replace(/[\-\.\+\*]/g, "\\$&") + "\\s*\\=\\s*([^;]*).*$)|^.*$"), "$1")) || null;
-  },
-  setItem: function setItem(sKey, sValue, vEnd, sPath, sDomain, bSecure) {
-    if (!sKey || /^(?:expires|max\-age|path|domain|secure)$/i.test(sKey)) {
-      return false;
-    }
-
-    var sExpires = "";
-
-    if (vEnd) {
-      switch (vEnd.constructor) {
-        case Number:
-          sExpires = vEnd === Infinity ? "; expires=Fri, 31 Dec 9999 23:59:59 GMT" : "; max-age=" + vEnd;
-          break;
-
-        case String:
-          sExpires = "; expires=" + vEnd;
-          break;
-
-        case Date:
-          sExpires = "; expires=" + vEnd.toUTCString();
-          break;
-      }
-    }
-
-    document.cookie = encodeURIComponent(sKey) + "=" + encodeURIComponent(sValue) + sExpires + (sDomain ? "; domain=" + sDomain : "") + (sPath ? "; path=" + sPath : "") + (bSecure ? "; secure" : "");
-    return true;
-  },
-  removeItem: function removeItem(sKey, sPath, sDomain) {
-    if (!this.hasItem(sKey)) {
-      return false;
-    }
-
-    document.cookie = encodeURIComponent(sKey) + "=; expires=Thu, 01 Jan 1970 00:00:00 GMT" + (sDomain ? "; domain=" + sDomain : "") + (sPath ? "; path=" + sPath : "");
-    return true;
-  },
-  hasItem: function hasItem(sKey) {
-    if (!sKey) {
-      return false;
-    }
-
-    return new RegExp("(?:^|;\\s*)" + encodeURIComponent(sKey).replace(/[\-\.\+\*]/g, "\\$&") + "\\s*\\=").test(document.cookie);
-  },
-  keys: function keys() {
-    var aKeys = document.cookie.replace(/((?:^|\s*;)[^\=]+)(?=;|$)|^\s*|\s*(?:\=[^;]*)?(?:\1|$)/g, "").split(/\s*(?:\=[^;]*)?;\s*/);
-
-    for (var nLen = aKeys.length, nIdx = 0; nIdx < nLen; nIdx++) {
-      aKeys[nIdx] = decodeURIComponent(aKeys[nIdx]);
-    }
-
-    return aKeys;
-  }
-};
-
 function checkIfDuplicateModification(body) {
   return body.hasOwnProperty('errors') && body.errors.length === 1 && body.errors[0].status === "422" && body.errors[0].hasOwnProperty('detail') && body.errors[0].detail === "Entity is not valid: The content has either been modified by another user, or you have already submitted modifications. As a result, your changes cannot be saved.";
 }
@@ -123,9 +64,9 @@ var DrupalOAuth = /*#__PURE__*/function () {
       this.clientId = args.clientId;
     }
 
-    this.token = typeof window !== "undefined" && mozillaDocCookies.hasItem('refresh_token') && mozillaDocCookies.hasItem('access_token') ? {
-      refresh_token: mozillaDocCookies.getItem('refresh_token'),
-      access_token: mozillaDocCookies.getItem('access_token')
+    this.token = typeof window !== "undefined" && docCookies.hasItem('refresh_token') && docCookies.hasItem('access_token') ? {
+      refresh_token: docCookies.getItem('refresh_token'),
+      access_token: docCookies.getItem('access_token')
     } : false;
     this.isLoggedIn = this.isLoggedIn.bind(this);
   }
@@ -278,7 +219,7 @@ var DrupalOAuth = /*#__PURE__*/function () {
       var refreshToken = false;
 
       if (typeof window !== "undefined") {
-        refreshToken = mozillaDocCookies.getItem('refresh_token');
+        refreshToken = docCookies.getItem('refresh_token');
       }
 
       var _temp5 = function () {
@@ -318,8 +259,8 @@ var DrupalOAuth = /*#__PURE__*/function () {
             _this6.token = _resp$json2;
 
             if (typeof window !== "undefined") {
-              mozillaDocCookies.setItem('refresh_token', _this6.token.refresh_token, Infinity, '/');
-              mozillaDocCookies.setItem('access_token', _this6.token.access_token, Infinity, '/');
+              docCookies.setItem('refresh_token', _this6.token.refresh_token, Infinity, '/; SameSite=None; Secure');
+              docCookies.setItem('access_token', _this6.token.access_token, Infinity, '/; SameSite=None; Secure');
             }
 
             return _this6.token;
@@ -385,7 +326,7 @@ var DrupalOAuth = /*#__PURE__*/function () {
 
         localStorage.clear();
         _this10.token = false;
-        return Promise.resolve(!mozillaDocCookies.hasItem('refresh_token'));
+        return Promise.resolve(!docCookies.hasItem('refresh_token'));
       } else {
         return Promise.resolve(true);
       }
@@ -396,8 +337,8 @@ var DrupalOAuth = /*#__PURE__*/function () {
 
   _proto.removeTokens = function removeTokens() {
     if (typeof window !== "undefined") {
-      mozillaDocCookies.removeItem('refresh_token', '/');
-      mozillaDocCookies.removeItem('access_token', '/');
+      docCookies.removeItem('refresh_token', '/');
+      docCookies.removeItem('access_token', '/');
     }
   };
 
