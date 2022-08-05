@@ -204,8 +204,9 @@ export class DrupalOAuth{
     if(resp && resp.status === 200){
       this.token = await resp.json();
       if (typeof window !== `undefined`) {
-        docCookies.setItem('refresh_token', this.token.refresh_token, Infinity, '/');
-        docCookies.setItem('access_token', this.token.access_token, Infinity, '/');
+        // For inherit sessions to iframes, for handling authorization through Drupal OAuth
+        docCookies.setItem('refresh_token', this.token.refresh_token, Infinity, '/; SameSite=None; Secure');
+        docCookies.setItem('access_token', this.token.access_token, Infinity, '/; SameSite=None; Secure');
       }
       return this.token;
     }
