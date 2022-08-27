@@ -110,8 +110,14 @@ export class DrupalOAuth{
       return validResponse;
     }
 
-    else if(resp.status === 401 || resp.status === 403){
-      // if we get 401 unauthorized (or apparently a 403, since JSONAPI seems to give us this), its probably because our access token is expired.
+    else if(resp.status === 403){
+      // if we get a forbidden response, send a distinctive falsy response
+      return null
+    }
+    
+    else if(resp.status === 401){
+
+      // if we get 401 unauthorized its probably because our access token is expired.
       // refresh and try again with a new token
       const newToken = await this.refresh();
       if(newToken) {

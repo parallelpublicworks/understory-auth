@@ -165,41 +165,46 @@ var DrupalOAuth = /*#__PURE__*/function () {
               _exit3 = true;
               return validResponse;
             } else return function () {
-              if (resp.status === 401 || resp.status === 403) {
-                return Promise.resolve(_this2.refresh()).then(function (newToken) {
-                  return function () {
-                    if (newToken) {
-                      init.headers = {
-                        'Authorization': "Bearer " + newToken.access_token,
-                        'Content-Type': 'application/vnd.api+json'
-                      };
-                      Object.assign(init.headers, headers);
-                      return Promise.resolve(fetch(url, init)).then(function (secondResp) {
-                        return Promise.resolve(_this2.verifyResponse(secondResp)).then(function (validResponse) {
-                          if (validResponse) {
-                            _exit3 = true;
-                            return validResponse;
-                          }
-                        });
-                      });
-                    }
-                  }();
-                });
+              if (resp.status === 403) {
+                _exit3 = true;
+                return null;
               } else return function () {
-                if (resp.status === 422) {
-                  return Promise.resolve(resp.json()).then(function (body) {
-                    if (checkIfDuplicateModification(body)) {
-                      _exit3 = true;
-                      return body;
-                    }
+                if (resp.status === 401) {
+                  return Promise.resolve(_this2.refresh()).then(function (newToken) {
+                    return function () {
+                      if (newToken) {
+                        init.headers = {
+                          'Authorization': "Bearer " + newToken.access_token,
+                          'Content-Type': 'application/vnd.api+json'
+                        };
+                        Object.assign(init.headers, headers);
+                        return Promise.resolve(fetch(url, init)).then(function (secondResp) {
+                          return Promise.resolve(_this2.verifyResponse(secondResp)).then(function (validResponse) {
+                            if (validResponse) {
+                              _exit3 = true;
+                              return validResponse;
+                            }
+                          });
+                        });
+                      }
+                    }();
                   });
-                }
+                } else return function () {
+                  if (resp.status === 422) {
+                    return Promise.resolve(resp.json()).then(function (body) {
+                      if (checkIfDuplicateModification(body)) {
+                        _exit3 = true;
+                        return body;
+                      }
+                    });
+                  }
+                }();
               }();
             }();
           }();
 
-          return _temp3 && _temp3.then ? _temp3.then(function (_result5) {
-            return _exit3 ? _result5 : false;
+          return _temp3 && _temp3.then ? _temp3.then(function (_result6) {
+            return _exit3 ? _result6 : false;
           }) : _exit3 ? _temp3 : false;
         });
       });
@@ -227,8 +232,8 @@ var DrupalOAuth = /*#__PURE__*/function () {
         }
       }();
 
-      return Promise.resolve(_temp5 && _temp5.then ? _temp5.then(function (_result6) {
-        return _exit5 ? _result6 : false;
+      return Promise.resolve(_temp5 && _temp5.then ? _temp5.then(function (_result7) {
+        return _exit5 ? _result7 : false;
       }) : _exit5 ? _temp5 : false);
     } catch (e) {
       return Promise.reject(e);
@@ -369,8 +374,10 @@ var fetchAuthenticatedContent = function fetchAuthenticatedContent(authContext, 
 
     var auth = new DrupalOAuth(state);
     return Promise.resolve(auth.drupalFetch(jsonapi_endpoint, method, body, headers)).then(function (content) {
-      if (!content) {
+      if (content === false) {
         dispatch(logoutUserAction());
+      } else if (content === null) {
+        console.warn('fobidden request was made');
       }
 
       return content;

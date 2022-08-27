@@ -115,8 +115,10 @@ export async function fetchAuthenticatedContent(authContext, jsonapi_endpoint, m
   }
   const auth = new DrupalOAuth(state);
   const content = await auth.drupalFetch(jsonapi_endpoint, method, body, headers);
-  if(!content){
+  if(content === false){
     dispatch(logoutUserAction());
+  }else if(content === null){
+    console.warn('fobidden request was made');
   }
   return content;
 }
