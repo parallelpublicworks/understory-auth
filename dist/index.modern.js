@@ -373,15 +373,7 @@ var fetchAuthenticatedContent = function fetchAuthenticatedContent(authContext, 
     }
 
     var auth = new DrupalOAuth(state);
-    return Promise.resolve(auth.drupalFetch(jsonapi_endpoint, method, body, headers)).then(function (content) {
-      if (content === false) {
-        dispatch(logoutUserAction());
-      } else if (content === null) {
-        console.warn('fobidden request was made');
-      }
-
-      return content;
-    });
+    return Promise.resolve(auth.drupalFetch(jsonapi_endpoint, method, body, headers));
   } catch (e) {
     return Promise.reject(e);
   }
