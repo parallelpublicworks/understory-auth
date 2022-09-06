@@ -81,14 +81,15 @@ export class DrupalOAuth{
    * @param {string} method An HTTP verb, mainly meant for `'GET'`, `'POST'`, `'PATCH'` and `'DELETE'`
    * @param {object|null} body The body of the request, for `'POST'` and `'PATCH'`
    * @param {object} headers
- * @param {object} extraParams Extra params: useDefaultJsonApiPath set it to true to avoid using the default "jsonapi" path for the requests.
+   * @param {object} extraParams Extra params: 'useDefaultJsonApiPath' set it to true to avoid using the default "jsonapi" path for the requests
+   * 'returnResponse' set it to true if you want to return the response like is received from the API.
    *
-   * @returns {Promise<object | Boolean>} A promise which will return a JSON object of content, true if success with no
-   * content, or false if it failed
+   * @returns {Promise<object| Response | Boolean>} A promise which will return a JSON object of content, true if success with no
+   * content, or false if it failed, if the extraPram 'returnResponse' is set to true it will return the Response object right from the request
    */
   async drupalFetch(jsonapiEndpoint, method='GET', body=null, headers=null, extraParams = {}){
 
-    const { useDefaultJsonApiPath = true } = extraParams;
+    const { useDefaultJsonApiPath = true, returnResponse = false } = extraParams;
 
     if(body && !(body instanceof File)){
       body = JSON.stringify(body)
@@ -109,6 +110,11 @@ export class DrupalOAuth{
       init.body = body
     }
     const resp = await fetch(url, init);
+
+    if(returnResponse) {
+      return resp;
+    }
+
     const validResponse = await this.verifyResponse(resp);
     if(validResponse){
       return validResponse;
