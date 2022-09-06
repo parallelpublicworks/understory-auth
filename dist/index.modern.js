@@ -141,7 +141,9 @@ var DrupalOAuth = /*#__PURE__*/function () {
 
       var _extraParams = extraParams,
           _extraParams$useDefau = _extraParams.useDefaultJsonApiPath,
-          useDefaultJsonApiPath = _extraParams$useDefau === void 0 ? true : _extraParams$useDefau;
+          useDefaultJsonApiPath = _extraParams$useDefau === void 0 ? true : _extraParams$useDefau,
+          _extraParams$returnRe = _extraParams.returnResponse,
+          returnResponse = _extraParams$returnRe === void 0 ? false : _extraParams$returnRe;
 
       if (body && !(body instanceof File)) {
         body = JSON.stringify(body);
@@ -165,7 +167,7 @@ var DrupalOAuth = /*#__PURE__*/function () {
       }
 
       return Promise.resolve(fetch(url, init)).then(function (resp) {
-        return Promise.resolve(_this2.verifyResponse(resp)).then(function (validResponse) {
+        return returnResponse ? resp : Promise.resolve(_this2.verifyResponse(resp)).then(function (validResponse) {
           var _exit3 = false;
 
           var _temp3 = function () {
