@@ -81,18 +81,22 @@ export class DrupalOAuth{
    * @param {string} method An HTTP verb, mainly meant for `'GET'`, `'POST'`, `'PATCH'` and `'DELETE'`
    * @param {object|null} body The body of the request, for `'POST'` and `'PATCH'`
    * @param {object} headers
+ * @param {object} extraParams Extra params: useDefaultJsonApiPath set it to true to avoid using the default "jsonapi" path for the requests.
    *
    * @returns {Promise<object | Boolean>} A promise which will return a JSON object of content, true if success with no
    * content, or false if it failed
    */
-  async drupalFetch(jsonapiEndpoint, method='GET', body=null, headers=null){
+  async drupalFetch(jsonapiEndpoint, method='GET', body=null, headers=null, extraParams = {}){
+
+    const { useDefaultJsonApiPath = true } = extraParams;
+
     if(body && !(body instanceof File)){
       body = JSON.stringify(body)
     }
 
     const base = this.getBaseUrl();
     const jsonapiBase = getPath('jsonapi', 'REACT_APP_ENTITYSYNC_JSONAPI_BASE');
-    const url = `${base}/${jsonapiBase}/${jsonapiEndpoint}`;
+    const url = useDefaultJsonApiPath ? `${base}/${jsonapiBase}/${jsonapiEndpoint}` : `${base}/${jsonapiEndpoint}`;
     const init = {
       method: method,
       headers: {
