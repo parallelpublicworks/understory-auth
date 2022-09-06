@@ -119,7 +119,7 @@ var DrupalOAuth = /*#__PURE__*/function () {
     }
   };
 
-  _proto.drupalFetch = function drupalFetch(jsonapiEndpoint, method, body, headers) {
+  _proto.drupalFetch = function drupalFetch(jsonapiEndpoint, method, body, headers, extraParams) {
     if (method === void 0) {
       method = 'GET';
     }
@@ -132,8 +132,16 @@ var DrupalOAuth = /*#__PURE__*/function () {
       headers = null;
     }
 
+    if (extraParams === void 0) {
+      extraParams = {};
+    }
+
     try {
       var _this2 = this;
+
+      var _extraParams = extraParams,
+          _extraParams$useDefau = _extraParams.useDefaultJsonApiPath,
+          useDefaultJsonApiPath = _extraParams$useDefau === void 0 ? true : _extraParams$useDefau;
 
       if (body && !(body instanceof File)) {
         body = JSON.stringify(body);
@@ -142,7 +150,7 @@ var DrupalOAuth = /*#__PURE__*/function () {
       var base = _this2.getBaseUrl();
 
       var jsonapiBase = getPath('jsonapi', 'REACT_APP_ENTITYSYNC_JSONAPI_BASE');
-      var url = base + "/" + jsonapiBase + "/" + jsonapiEndpoint;
+      var url = useDefaultJsonApiPath ? base + "/" + jsonapiBase + "/" + jsonapiEndpoint : base + "/" + jsonapiEndpoint;
       var init = {
         method: method,
         headers: {
@@ -348,7 +356,7 @@ var DrupalOAuth = /*#__PURE__*/function () {
   return DrupalOAuth;
 }();
 
-var fetchAuthenticatedContent = function fetchAuthenticatedContent(authContext, jsonapi_endpoint, method, body, headers) {
+var fetchAuthenticatedContent = function fetchAuthenticatedContent(authContext, jsonapi_endpoint, method, body, headers, extraParams) {
   if (method === void 0) {
     method = 'GET';
   }
@@ -359,6 +367,10 @@ var fetchAuthenticatedContent = function fetchAuthenticatedContent(authContext, 
 
   if (headers === void 0) {
     headers = null;
+  }
+
+  if (extraParams === void 0) {
+    extraParams = {};
   }
 
   try {
@@ -373,7 +385,7 @@ var fetchAuthenticatedContent = function fetchAuthenticatedContent(authContext, 
     }
 
     var auth = new DrupalOAuth(state);
-    return Promise.resolve(auth.drupalFetch(jsonapi_endpoint, method, body, headers)).then(function (content) {
+    return Promise.resolve(auth.drupalFetch(jsonapi_endpoint, method, body, headers, extraParams)).then(function (content) {
       if (content === false) {
         dispatch(logoutUserAction());
       } else if (content === null) {

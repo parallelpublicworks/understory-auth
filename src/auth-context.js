@@ -101,10 +101,11 @@ export function handleLogout(authContext){
  * @param {string} method An HTTP verb, mainly meant for `'GET'`,`'POST'`, `'PATCH'` and `'DELETE'`
  * @param {Object|null} body The body of the request, for `'POST'` and `'PATCH'`
  * @param headers
+ * @param {object|null} extraParams Extra params: useDefaultJsonApiPath set it to true to avoid using the default "jsonapi" path for the requests.
  *
  * @returns {Promise<object | Boolean>} A promise which will return a JSON object of content or false if it failed
  */
-export async function fetchAuthenticatedContent(authContext, jsonapi_endpoint, method='GET', body=null, headers=null){
+export async function fetchAuthenticatedContent(authContext, jsonapi_endpoint, method='GET', body=null, headers=null, extraParams = {}){
   let state, dispatch;
   if(Array.isArray(authContext)){
     [state, dispatch] = authContext
@@ -114,7 +115,7 @@ export async function fetchAuthenticatedContent(authContext, jsonapi_endpoint, m
     dispatch = authContext;
   }
   const auth = new DrupalOAuth(state);
-  const content = await auth.drupalFetch(jsonapi_endpoint, method, body, headers);
+  const content = await auth.drupalFetch(jsonapi_endpoint, method, body, headers, extraParams);
   if(content === false){
     dispatch(logoutUserAction());
   }else if(content === null){
